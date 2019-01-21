@@ -9,7 +9,7 @@ GOTOOLS = \
 	github.com/alecthomas/gometalinter \
 	github.com/rakyll/statik
 GOBIN ?= $(GOPATH)/bin
-all: devtools get_vendor_deps install install_examples install_cosmos-sdk-cli test_lint test
+all: devtools get_vendor_deps install test_lint test
 
 # The below include contains the tools target.
 include scripts/Makefile
@@ -49,13 +49,11 @@ build:
 ifeq ($(OS),Windows_NT)
 	go build $(BUILD_FLAGS) -o build/gaiad.exe ./cmd/gaia/cmd/gaiad
 	go build $(BUILD_FLAGS) -o build/gaiacli.exe ./cmd/gaia/cmd/gaiacli
-	go build $(BUILD_FLAGS) -o build/logjack ./cmd/logjack
 else
 	go build $(BUILD_FLAGS) -o build/gaiad ./cmd/gaia/cmd/gaiad
 	go build $(BUILD_FLAGS) -o build/gaiacli ./cmd/gaia/cmd/gaiacli
 	go build $(BUILD_FLAGS) -o build/gaiareplay ./cmd/gaia/cmd/gaiareplay
 	go build $(BUILD_FLAGS) -o build/gaiakeyutil ./cmd/gaia/cmd/gaiakeyutil
-	go build $(BUILD_FLAGS) -o build/logjack ./cmd/logjack
 endif
 
 build-linux:
@@ -64,22 +62,11 @@ build-linux:
 update_gaia_lite_docs:
 	@statik -src=client/lcd/swagger-ui -dest=client/lcd -f
 
-build_cosmos-sdk-cli:
-ifeq ($(OS),Windows_NT)
-	go build $(BUILD_FLAGS) -o build/cosmos-sdk-cli.exe ./cmd/cosmos-sdk-cli
-else
-	go build $(BUILD_FLAGS) -o build/cosmos-sdk-cli ./cmd/cosmos-sdk-cli
-endif
-
 install: check-ledger update_gaia_lite_docs
 	go install $(BUILD_FLAGS) ./cmd/gaia/cmd/gaiad
 	go install $(BUILD_FLAGS) ./cmd/gaia/cmd/gaiacli
 	go install $(BUILD_FLAGS) ./cmd/gaia/cmd/gaiareplay
 	go install $(BUILD_FLAGS) ./cmd/gaia/cmd/gaiakeyutil
-	go install $(BUILD_FLAGS) ./cmd/logjack
-
-install_cosmos-sdk-cli:
-	go install $(BUILD_FLAGS) ./cmd/cosmos-sdk-cli
 
 install_debug:
 	go install $(BUILD_FLAGS) ./cmd/gaia/cmd/gaiadebug
@@ -188,7 +175,7 @@ test_cover:
 
 test_lint:
 	gometalinter --config=tools/gometalinter.json ./...
-	!(gometalinter --exclude /usr/lib/go/src/ --exclude client/lcd/statik/statik.go --exclude 'vendor/*' --exclude 'cmd/logjack/*' --disable-all --enable='errcheck' --vendor ./... | grep -v "client/")
+	!(gometalinter --exclude /usr/lib/go/src/ --exclude client/lcd/statik/statik.go --exclude 'vendor/*' --disable-all --enable='errcheck' --vendor ./... | grep -v "client/")
 	find . -name '*.go' -type f -not -path "./vendor*" -not -path "*.git*" | xargs gofmt -d -s
 	dep status >> /dev/null
 	!(grep -n branch Gopkg.toml)
@@ -244,7 +231,7 @@ localnet-stop:
 # To avoid unintended conflicts with file names, always add to .PHONY
 # unless there is a reason not to.
 # https://www.gnu.org/software/make/manual/html_node/Phony-Targets.html
-.PHONY: build build_cosmos-sdk-cli build_examples install install_examples install_cosmos-sdk-cli install_debug dist \
+.PHONY: build install install_debug dist \
 check_tools check_dev_tools get_vendor_deps draw_deps test test_cli test_unit \
 test_cover test_lint benchmark devdoc_init devdoc devdoc_save devdoc_update \
 build-linux build-docker-gaiadnode localnet-start localnet-stop \
